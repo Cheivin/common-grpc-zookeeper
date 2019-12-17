@@ -11,11 +11,14 @@ import top.cheivin.grpc.core.GrpcRequest;
 import top.cheivin.grpc.core.Registry;
 import top.cheivin.grpc.exception.InstanceException;
 import top.cheivin.grpc.exception.InvokeException;
-import top.cheivin.grpc.handle.DefaultServiceInfoManage;
+import top.cheivin.grpc.core.DefaultServiceInfoManage;
 import top.cheivin.service.AService;
 import top.cheivin.service.TestService;
 
 import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  *
@@ -45,29 +48,6 @@ public class ZkTest {
     }
 
     @Test
-    public void testBatchCall() throws Exception {
-        Discover discover = new ZkDiscover();
-        GrpcClient client = new GrpcClient(discover);
-        client.start();
-        for (int i = 0; i < 30; i++) {
-            int finalI = i;
-            (new Thread(() -> {
-                GrpcRequest request = new GrpcRequest();
-                request.setServiceName("testService");
-                request.setMethodName("hello1");
-                request.setVersion("1.0.0");
-                request.setArgs(new Object[]{"cheivin" + finalI});
-                try {
-                    log.info("res:{}", client.invoke(request));
-                } catch (InstanceException | InvokeException e) {
-                    e.printStackTrace();
-                }
-            })).start();
-        }
-        client.stop();
-    }
-
-    @Test
     public void testMultiArgsCall() throws Exception {
         Discover discover = new ZkDiscover();
         GrpcClient client = new GrpcClient(discover);
@@ -79,9 +59,26 @@ public class ZkTest {
         request.setVersion("1.0.0");
         request.setArgs(new Object[]{"hahahaha", "cheivin"});
         Object res = client.invoke(request);
-        log.info("res:{}", res);
+        log.info("请求结果:{}", res);
         client.stop();
     }
+
+    @Test
+    public void testSingleArgsCall() throws Exception {
+        Discover discover = new ZkDiscover();
+        GrpcClient client = new GrpcClient(discover);
+        client.start();
+
+        GrpcRequest request = new GrpcRequest();
+        request.setServiceName("testService");
+        request.setMethodName("hello1");
+        request.setVersion("1.0.0");
+        request.setArgs(new Object[]{"cheivin"});
+        Object res = client.invoke(request);
+        log.info("请求结果:{}", res);
+        client.stop();
+    }
+
 
     @Test
     public void testNoArgsCall() throws Exception {
@@ -96,7 +93,36 @@ public class ZkTest {
         request.setVersion("1.0.0");
         request.setArgs(null);
         Object res = client.invoke(request);
-        log.info("res:{}", res);
+        log.info("请求结果:{}", res);
+        client.stop();
+    }
+
+    @Test
+    public void testBatchCall() throws Exception {
+        Discover discover = new ZkDiscover();
+        GrpcClient client = new GrpcClient(discover);
+        client.start();
+
+        int count = 1000;
+        ExecutorService executor = Executors.newFixedThreadPool(count);
+        for (int i = 0; i < count; i++) {
+            int finalI = i;
+            executor.execute(() -> {
+                GrpcRequest request = new GrpcRequest();
+                request.setServiceName("testService");
+                request.setMethodName("hello1");
+                request.setVersion("1.0.0");
+                request.setArgs(new Object[]{"cheivin" + finalI});
+                try {
+                    log.info("请求结果:{}", client.invoke(request));
+                } catch (InstanceException | InvokeException e) {
+                    e.printStackTrace();
+                }
+            });
+        }
+        executor.shutdown();
+        executor.awaitTermination(1, TimeUnit.DAYS);
+        System.out.println("stop");
         client.stop();
     }
 
