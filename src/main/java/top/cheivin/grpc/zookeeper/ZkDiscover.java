@@ -1,10 +1,10 @@
 package top.cheivin.grpc.zookeeper;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.*;
+import org.apache.zookeeper.data.Stat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import top.cheivin.grpc.core.*;
 import top.cheivin.grpc.exception.ChannelException;
 import top.cheivin.grpc.exception.InstanceException;
@@ -25,6 +25,7 @@ public class ZkDiscover implements Discover, Watcher {
      */
     private CountDownLatch connectedSemaphore = new CountDownLatch(1);
     private ZooKeeper zk;
+    private boolean run;
     /**
      * 远程服务提供者实例管理器
      */
@@ -67,15 +68,27 @@ public class ZkDiscover implements Discover, Watcher {
     public void start() throws Exception {
         ZooKeeper zk = new ZooKeeper(this.zkHost, this.timeout, this);
         connectedSemaphore.await();
-        log.info("{} connection success", "zookeeper");
         this.zk = zk;
+        run = true;
+        checkRootNode();
         updateServiceList();
     }
+
+    private void checkRootNode() throws KeeperException, InterruptedException {
+        Stat exists = zk.exists(appName, false);
+        if (exists == null) {
+            zk.create(appName, null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        }
+    }
+
 
     @Override
     public void close() {
         try {
-            zk.close();
+            if (zk != null) {
+                run = false;
+                zk.close();
+            }
         } catch (InterruptedException e) {
             log.error("zk discover stop error", e);
         }
@@ -129,7 +142,9 @@ public class ZkDiscover implements Discover, Watcher {
                 remoteInstanceManage.refreshInstances(serviceKey, instanceMap);
             }
         } catch (KeeperException | InterruptedException e) {
-            log.error("zk error", e);
+            if (run) {
+                log.error("zk error", e);
+            }
         }
     }
 
@@ -145,11 +160,9 @@ public class ZkDiscover implements Discover, Watcher {
                 break;
             case NodeChildrenChanged:
                 if (event.getPath().equals(appName)) {
-                    log.info("服务列表变动:{}", event.getPath());
                     updateServiceList();
                 } else if (event.getPath().startsWith(appName)) {
                     String serviceName = event.getPath().substring(appName.length() + 1);
-                    log.info("服务提供者变动:{}", serviceName);
                     updateProviderList(serviceName);
                 }
                 break;

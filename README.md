@@ -1,5 +1,5 @@
-# common-grpc-core
-基于grpc实现的rpc远程调用框架
+# common-grpc-zookeeper
+common-grpc的zookeeper服务注册发现客户端
 
 # 使用方法
 

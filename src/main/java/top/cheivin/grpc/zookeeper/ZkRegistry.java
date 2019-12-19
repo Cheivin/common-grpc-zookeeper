@@ -67,7 +67,9 @@ public class ZkRegistry implements Registry, Watcher {
     @Override
     public void close() {
         try {
-            zk.close();
+            if (zk!=null){
+                zk.close();
+            }
         } catch (Exception e) {
             log.error("zk registry stop error", e);
         }
@@ -77,7 +79,6 @@ public class ZkRegistry implements Registry, Watcher {
     public void addService(Collection<ServiceInfo> infos) {
         for (ServiceInfo info : infos) {
             String zNode = appName + "/" + info.getServiceName() + ":" + info.getVersion();
-            log.info("zNode:{},service:{},version:{}", zNode, info.getServiceName(), info.getVersion());
             try {
                 // 检查并创建服务节点
                 if (zk.exists(zNode, false) == null) {

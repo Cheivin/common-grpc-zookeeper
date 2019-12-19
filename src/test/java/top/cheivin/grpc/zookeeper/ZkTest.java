@@ -1,17 +1,17 @@
 package top.cheivin.grpc.zookeeper;
 
 import lombok.extern.slf4j.Slf4j;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import top.cheivin.grpc.GrpcClient;
 import top.cheivin.grpc.GrpcServer;
+import top.cheivin.grpc.core.DefaultServiceInfoManage;
 import top.cheivin.grpc.core.Discover;
 import top.cheivin.grpc.core.GrpcRequest;
 import top.cheivin.grpc.core.Registry;
 import top.cheivin.grpc.exception.InstanceException;
 import top.cheivin.grpc.exception.InvokeException;
-import top.cheivin.grpc.core.DefaultServiceInfoManage;
 import top.cheivin.service.AService;
 import top.cheivin.service.TestService;
 
@@ -20,14 +20,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-/**
- *
- */
 @Slf4j
 public class ZkTest {
     private GrpcServer server;
 
-    @Before
+    @BeforeEach
     public void startServer() throws Exception {
         Registry client = new ZkRegistry();
         DefaultServiceInfoManage manage = new DefaultServiceInfoManage();
@@ -39,10 +36,11 @@ public class ZkTest {
                 .build();
 
         server.start();
+        Thread.sleep(10000);
         this.server = server;
     }
 
-    @After
+    @AfterEach
     public void stopServer() {
         this.server.stop();
     }
