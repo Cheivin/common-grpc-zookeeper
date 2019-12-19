@@ -3,13 +3,17 @@ package top.cheivin.grpc.zookeeper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.zookeeper.*;
 import org.apache.zookeeper.data.Stat;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import top.cheivin.grpc.core.*;
+import top.cheivin.grpc.core.Discover;
+import top.cheivin.grpc.core.GrpcRequest;
+import top.cheivin.grpc.core.RemoteInstance;
+import top.cheivin.grpc.core.RemoteInstanceManage;
 import top.cheivin.grpc.exception.ChannelException;
 import top.cheivin.grpc.exception.InstanceException;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -130,7 +134,7 @@ public class ZkDiscover implements Discover, Watcher {
         try {
             List<String> nodes = zk.getChildren(appName + "/" + serviceKey, true);
             if (nodes.size() == 0) { // 无节点时，关闭已连接的提供者
-                remoteInstanceManage.clear(serviceKey);
+                //remoteInstanceManage.clear(serviceKey);
             } else {
                 // 处理节点id信息
                 Map<String, RemoteInstance> instanceMap = new HashMap<>();
@@ -159,6 +163,7 @@ public class ZkDiscover implements Discover, Watcher {
                 }
                 break;
             case NodeChildrenChanged:
+                log.info("service or instance changed");
                 if (event.getPath().equals(appName)) {
                     updateServiceList();
                 } else if (event.getPath().startsWith(appName)) {
