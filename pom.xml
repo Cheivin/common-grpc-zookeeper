@@ -6,13 +6,13 @@
 
     <groupId>com.github.cheivin</groupId>
     <artifactId>common-grpc-zookeeper</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
 
     <properties>
         <jdk.version>1.8</jdk.version>
         <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
         <grpc.version>1.25.0</grpc.version>
-        <grpc-core.version>0.0.1</grpc-core.version>
+        <grpc-core.version>0.0.2</grpc-core.version>
     </properties>
 
     <dependencies>
